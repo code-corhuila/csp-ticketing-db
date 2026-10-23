@@ -1,6 +1,6 @@
-# csp-notification-db
+# csp-ticketing-db-db
 
-> notification bounded context: database (schema, seeds, migrations)
+> ticketing bounded context: database (schema, seeds, migrations)
 
 Part of the **LMS Library** distributed system — team `lms-library`, Grupo 2.
 Governance and documentation live in [`library-docs`](https://github.com/code-corhuila/library-docs).
