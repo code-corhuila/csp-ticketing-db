@@ -7,6 +7,8 @@ All notable changes to the `ticketing_fulfillment` schema.
 ### Added
 - V002: `user_contact` table for contact projection (HU-TICKETING-001)
 - V003: `inbox_event` table for event idempotency (HU-TICKETING-001)
+- V004: `tickets` table for ticket issuance (HU-TICKETING-002)
+- V005: `ticketing_fulfillments` table for email delivery jobs (HU-TICKETING-002)
 
 ### Migration Details
 
@@ -44,7 +46,56 @@ CREATE INDEX idx_inbox_event_event_id ON ticketing_fulfillment.inbox_event (even
 ```
 **Grants:** `ticketing_writer` (SELECT, INSERT), `ticketing_reader` (SELECT)
 
+#### V004__create_tickets_table.sql
+```sql
+CREATE TABLE ticketing_fulfillment.tickets (
+    id                       UUID        NOT NULL DEFAULT gen_random_uuid(),
+    user_contact_id          UUID        NOT NULL,
+    reservation_id           UUID        NOT NULL,
+    showtime_id              UUID        NOT NULL,
+    movie_title_snapshot     VARCHAR(255) NOT NULL,
+    room_name_snapshot       VARCHAR(160) NOT NULL,
+    showtime_starts_at       TIMESTAMPTZ NOT NULL,
+    seat_labels_snapshot     JSONB       NOT NULL,
+    concessions_snapshot     JSONB,
+    qr_payload               TEXT        NOT NULL,
+    pdf_url                  VARCHAR(500),
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_tickets PRIMARY KEY (id),
+    CONSTRAINT uk_tickets_reservation_id UNIQUE (reservation_id),
+    CONSTRAINT chk_tickets_qr_payload_length CHECK (char_length(qr_payload) BETWEEN 1 AND 500)
+);
+CREATE INDEX idx_tickets_user_contact_id ON ticketing_fulfillment.tickets (user_contact_id);
+CREATE INDEX idx_tickets_showtime_id ON ticketing_fulfillment.tickets (showtime_id);
+```
+**Grants:** `ticketing_writer` (SELECT, INSERT, UPDATE), `ticketing_reader` (SELECT)
+
+#### V005__create_ticketing_fulfillments_table.sql
+```sql
+CREATE TABLE ticketing_fulfillment.ticketing_fulfillments (
+    id              UUID        NOT NULL DEFAULT gen_random_uuid(),
+    ticket_id       UUID        NOT NULL,
+    channel         VARCHAR(50) NOT NULL DEFAULT 'EMAIL',
+    status          VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    attempts        INT         NOT NULL DEFAULT 0,
+    last_error      TEXT,
+    next_retry_at   TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_ticketing_fulfillments PRIMARY KEY (id),
+    CONSTRAINT fk_ticketing_fulfillments_ticket FOREIGN KEY (ticket_id) REFERENCES ticketing_fulfillment.tickets (id) ON DELETE CASCADE,
+    CONSTRAINT chk_ticketing_fulfillments_status CHECK (status IN ('PENDING', 'SENT', 'FAILED')),
+    CONSTRAINT chk_ticketing_fulfillments_channel CHECK (channel IN ('EMAIL'))
+);
+CREATE INDEX idx_ticketing_fulfillments_status_next_retry ON ticketing_fulfillment.ticketing_fulfillments (status, next_retry_at) WHERE status = 'PENDING';
+CREATE INDEX idx_ticketing_fulfillments_ticket_id ON ticketing_fulfillment.ticketing_fulfillments (ticket_id);
+```
+**Grants:** `ticketing_writer` (SELECT, INSERT, UPDATE), `ticketing_reader` (SELECT)
+
 ### Rollback
+- U005: `DROP TABLE ticketing_fulfillment.ticketing_fulfillments`
+- U004: `DROP TABLE ticketing_fulfillment.tickets`
 - U003: `DROP TABLE ticketing_fulfillment.inbox_event`
 - U002: `DROP TABLE ticketing_fulfillment.user_contact`
 
