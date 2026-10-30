@@ -1,0 +1,96 @@
+name: DB CI — csp-ticketing-db
+
+on:
+  push:
+    branches: [develop, qa-promote/*, release/*]
+  pull_request:
+    branches: [develop, qa, main]
+
+jobs:
+  migrate:
+    name: Flyway migrate + test + rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: csp
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Flyway validate
+        run: |
+          mvn -q flyway:validate \
+            -Dflyway.configFiles=flyway.conf \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/csp \
+            -Dflyway.user=postgres \
+            -Dflyway.password=postgres
+
+      - name: Flyway migrate (clean schema)
+        run: |
+          mvn -q flyway:migrate \
+            -Dflyway.configFiles=flyway.conf \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/csp \
+            -Dflyway.user=postgres \
+            -Dflyway.password=postgres \
+            -Dflyway.baselineOnMigrate=true
+
+      - name: Run db-tests
+        run: |
+          for test in .github/db-tests/*.sql; do
+            echo "Running $test..."
+            psql -h localhost -U postgres -d csp -f "$test"
+          done
+        env:
+          PGPASSWORD: postgres
+
+      - name: Flyway rollback (U scripts)
+        run: |
+          mvn -q flyway:undo \
+            -Dflyway.configFiles=flyway.conf \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/csp \
+            -Dflyway.user=postgres \
+            -Dflyway.password=postgres \
+            -Dflyway.undoCount=2
+
+      - name: Flyway migrate again (verify reapply)
+        run: |
+          mvn -q flyway:migrate \
+            -Dflyway.configFiles=flyway.conf \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/csp \
+            -Dflyway.user=postgres \
+            -Dflyway.password=postgres
+
+      - name: Verify tables exist after reapply
+        run: |
+          psql -h localhost -U postgres -d csp -c "
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema = 'ticketing_fulfillment'
+            ORDER BY table_name;
+          "
+        env:
+          PGPASSWORD: postgres
