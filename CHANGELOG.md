@@ -4,6 +4,9 @@ All notable changes to the `ticketing_fulfillment` schema.
 
 ## [Unreleased]
 
+### Fixed
+- Removed the duplicate `V002__create_user_contacts_table.sql` and `U002__drop_user_contacts_table.sql` (plural, `VARCHAR`, no format check): two files with version 2 made Flyway fail validation. `V002__create_user_contact_table.sql` is the only V002 (HU-TICKETING-001)
+
 ### Added
 - V002: `user_contact` table for contact projection (HU-TICKETING-001)
 - V003: `inbox_event` table for event idempotency (HU-TICKETING-001)
