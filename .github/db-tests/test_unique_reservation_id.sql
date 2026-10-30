@@ -4,8 +4,9 @@
 \set ON_ERROR_STOP on
 
 -- First insert
-INSERT INTO ticketing_fulfillment.tickets (user_contact_id, reservation_id, showtime_id, movie_title_snapshot, room_name_snapshot, showtime_starts_at, seat_labels_snapshot, qr_payload)
+INSERT INTO ticketing_fulfillment.tickets (user_id, user_contact_id, reservation_id, showtime_id, movie_title_snapshot, room_name_snapshot, showtime_starts_at, seat_labels_snapshot, qr_payload)
 VALUES (
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     'cccccccc-cccc-cccc-cccc-cccccccccccc',
@@ -18,8 +19,9 @@ VALUES (
 
 -- Second insert with same reservation_id should fail
 \set EXPECT_ERROR unique_violation
-INSERT INTO ticketing_fulfillment.tickets (user_contact_id, reservation_id, showtime_id, movie_title_snapshot, room_name_snapshot, showtime_starts_at, seat_labels_snapshot, qr_payload)
+INSERT INTO ticketing_fulfillment.tickets (user_id, user_contact_id, reservation_id, showtime_id, movie_title_snapshot, room_name_snapshot, showtime_starts_at, seat_labels_snapshot, qr_payload)
 VALUES (
+    'dddddddd-dddd-dddd-dddd-dddddddddddd',
     'dddddddd-dddd-dddd-dddd-dddddddddddd',
     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',

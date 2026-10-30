@@ -12,6 +12,9 @@ All notable changes to the `ticketing_fulfillment` schema.
 - V003: `inbox_event` table for event idempotency (HU-TICKETING-001)
 - V004: `tickets` table for ticket issuance (HU-TICKETING-002)
 - V005: `ticketing_fulfillments` table for email delivery jobs (HU-TICKETING-002)
+- V007: `outbox_event` table and the `ticketing_outbox_reader` role for the transactional outbox (HU-TICKETING-002, ADR-057)
+- V008: `tickets.user_id`, backfilled from `user_contact`; `user_contact_id` becomes nullable so a ticket can exist before its contact (HU-TICKETING-002, ADR-057)
+- V009: `tickets.showtime_starts_at` becomes nullable, because Booking sends a null start until Catalog exists (HU-TICKETING-002, ADR-057)
 
 ### Migration Details
 
@@ -97,6 +100,9 @@ CREATE INDEX idx_ticketing_fulfillments_ticket_id ON ticketing_fulfillment.ticke
 **Grants:** `ticketing_writer` (SELECT, INSERT, UPDATE), `ticketing_reader` (SELECT)
 
 ### Rollback
+- U009: `SET NOT NULL` on `tickets.showtime_starts_at` (fails while a null exists)
+- U008: drop `tickets.user_id` and its index; `SET NOT NULL` on `user_contact_id` (fails while a ticket has no contact)
+- U007: drop `ticketing_fulfillment.outbox_event` (the role `ticketing_outbox_reader` stays)
 - U005: `DROP TABLE ticketing_fulfillment.ticketing_fulfillments`
 - U004: `DROP TABLE ticketing_fulfillment.tickets`
 - U003: `DROP TABLE ticketing_fulfillment.inbox_event`
