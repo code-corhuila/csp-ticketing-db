@@ -9,6 +9,8 @@ All notable changes to the `ticketing_fulfillment` schema.
 - Removed the duplicate `V002__create_user_contacts_table.sql` and `U002__drop_user_contacts_table.sql` (plural, `VARCHAR`, no format check): two files with version 2 made Flyway fail validation. `V002__create_user_contact_table.sql` is the only V002 (HU-TICKETING-001)
 
 ### Added
+- `deploy/compose.yml`: the migration executor `ticketing-db-migrate` (Flyway 11.20, profile `tooling`, network `platform`) for the platform composition. The login comes from `TICKETING_DB_USER` and `TICKETING_DB_PASSWORD`, the connection is retried while the instance starts, and nothing is written in the file (csp-ticketing-db#12, Annex J).
+- README: how to run the migrations, and the project identity of the template (Cinesync Platform, Group 1, `csp-docs`) in place of `LMS Library`.
 - V002: `user_contact` table for contact projection (HU-TICKETING-001)
 - V003: `inbox_event` table for event idempotency (HU-TICKETING-001)
 - V004: `tickets` table for ticket issuance (HU-TICKETING-002)
