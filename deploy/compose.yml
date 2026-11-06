@@ -1,0 +1,24 @@
+# Migration executor of csp-ticketing-db (Annex J). This file defines NO database service and NO volume:
+# the single PostgreSQL instance of the environment belongs to csp-infra-postgres, which composes this
+# file with `include` and joins the same `platform` network. Run the executor before the API starts.
+name: csp-ticketing-db
+
+services:
+  ticketing-db-migrate:
+    image: flyway/flyway:11.20
+    profiles: [tooling]
+    volumes:
+      - ../:/workspace:ro
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${PG_DATABASE:?set PG_DATABASE}
+      FLYWAY_USER: ${TICKETING_DB_USER:?set TICKETING_DB_USER}
+      FLYWAY_PASSWORD: ${TICKETING_DB_PASSWORD:?set TICKETING_DB_PASSWORD}
+      FLYWAY_CONNECT_RETRIES: ${FLYWAY_CONNECT_RETRIES:-60}
+    entrypoint: ["flyway", "-workingDirectory=/workspace", "-configFiles=flyway.conf"]
+    command: ["migrate"]
+    networks: [platform]
+
+networks:
+  platform:
+    name: platform
+    external: true
