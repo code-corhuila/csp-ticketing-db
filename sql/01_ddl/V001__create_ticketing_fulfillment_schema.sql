@@ -3,8 +3,7 @@
 -- Related: ADR-017, ADR-013, ADR-006
 
 -- 1. Schema
-CREATE SCHEMA IF NOT EXISTS ticketing_fulfillment
-  AUTHORIZATION postgres;
+CREATE SCHEMA IF NOT EXISTS ticketing_fulfillment;
 
 COMMENT ON SCHEMA ticketing_fulfillment IS
   'Ticketing & Fulfillment bounded context: contact projections, tickets, fulfillment jobs, inbox events.';
@@ -23,14 +22,14 @@ END $$;
 -- 3. Grants on schema
 GRANT USAGE ON SCHEMA ticketing_fulfillment TO ticketing_reader, ticketing_writer;
 
--- Default privileges for future objects (owner = ticketing_writer via migration user)
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ticketing_fulfillment
+-- Default privileges for future objects (for the objects created by the user that runs the migrations)
+ALTER DEFAULT PRIVILEGES IN SCHEMA ticketing_fulfillment
   GRANT SELECT ON TABLES TO ticketing_reader;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ticketing_fulfillment
+ALTER DEFAULT PRIVILEGES IN SCHEMA ticketing_fulfillment
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ticketing_writer;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ticketing_fulfillment
+ALTER DEFAULT PRIVILEGES IN SCHEMA ticketing_fulfillment
   GRANT USAGE, SELECT ON SEQUENCES TO ticketing_reader, ticketing_writer;
 
 -- 4. Flyway control table (created automatically by Flyway on first migrate)
