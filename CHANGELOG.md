@@ -4,6 +4,10 @@ All notable changes to the `ticketing_fulfillment` schema.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-07
+
+First release of this repository to `main`: it carries the `ticketing_fulfillment` schema migrations V001 to V012 and their rollbacks U001 to U012 (HU-TICKETING-001, HU-TICKETING-002, HU-TICKETING-005). A deployment that applied the previous text of V001 needs `flyway repair` once (see Fixed).
+
 ### Fixed
 - V001 no longer names the administrator: `CREATE SCHEMA IF NOT EXISTS` has no `AUTHORIZATION postgres` and the three `ALTER DEFAULT PRIVILEGES` have no `FOR ROLE postgres`, so the privileges of `ticketing_reader` and `ticketing_writer` apply to the tables created by the user that runs the migrations. With the previous text V001 failed for `ticketing_migrator` (`must be able to SET ROLE "postgres"`, then `permission denied to change default privileges`) and, if it had run, the tables of that login would not have received those privileges. This changes the checksum of V001: an instance that already applied it needs `flyway repair` once; a new instance is not affected (csp-ticketing-db#12, Annex G, Annex J).
 - Removed the duplicate `V002__create_user_contacts_table.sql` and `U002__drop_user_contacts_table.sql` (plural, `VARCHAR`, no format check): two files with version 2 made Flyway fail validation. `V002__create_user_contact_table.sql` is the only V002 (HU-TICKETING-001)
