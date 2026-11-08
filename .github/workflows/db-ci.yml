@@ -42,6 +42,13 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      - name: Create the instance logins
+        run: |
+          # csp-infra-postgres creates the logins before any executor runs (Annex J.5.5).
+          psql -h localhost -U postgres -d csp -c "CREATE ROLE worker_app LOGIN PASSWORD 'ci-only';"
+        env:
+          PGPASSWORD: postgres
+
       - name: Flyway validate
         run: |
           mvn -q flyway:validate \
